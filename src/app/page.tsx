@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ToastProvider, useToast } from '@/components/ui/toast';
 import { Copy, ChevronDown, Sparkles, Code, FolderTree, Settings, Github, Heart, Send, ArrowUp, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { trackGenerateKit, trackCopyContent, trackTechStackSelection } from '@/lib/gtag';
 
 interface ExpandableCapsuleProps {
   title: string;
@@ -266,17 +267,13 @@ function MainContent() {
       return;
     }
 
-    // Simple analytics tracking
-    if (typeof window !== 'undefined') {
-      const windowWithGtag = window as typeof window & { gtag?: (...args: unknown[]) => void };
-      if (windowWithGtag.gtag) {
-        windowWithGtag.gtag('event', 'generate_kit', {
-          event_category: 'engagement',
-          event_label: `${selectedFramework}-${selectedBackend}-${selectedDatabase}`,
-          ide: selectedIde,
-        });
-      }
-    }
+    // Analytics tracking
+    trackGenerateKit({
+      framework: selectedFramework,
+      backend: selectedBackend,
+      database: selectedDatabase,
+      ide: selectedIde,
+    });
 
     setIsGenerating(true);
     setGeneratedOutputs(null); 
@@ -341,6 +338,7 @@ function MainContent() {
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
     showToast(`${type} copied to clipboard!`, 'success');
+    trackCopyContent(type as 'rules' | 'prompts' | 'structure');
   };
 
   const TechGroup = ({ 
@@ -356,6 +354,11 @@ function MainContent() {
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     
+    const handleSelect = (option: string) => {
+      onSelect(option);
+      trackTechStackSelection(title, option);
+    };
+
     return (
       <div 
         className="relative"
@@ -403,7 +406,7 @@ function MainContent() {
                   {options.map((option) => (
                     <motion.button
                       key={option}
-                      onClick={() => onSelect(selected === option ? '' : option)}
+                      onClick={() => handleSelect(option)}
                       className={cn(
                         "px-2 py-1 text-[9px] leading-tight font-mono border border-black transition-all duration-200 cursor-pointer", 
                         selected === option
