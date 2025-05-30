@@ -130,7 +130,7 @@ The project structure must include a 'docs/ai_context/' directory with suggested
         if (!(key in parsedResponse) || !parsedResponse[key]) { // Also check if value is empty/null
           console.warn(`OpenAI response missing or empty key: ${key}. Falling back for this key.`);
           const fallback = generateFallbackResponse(description, ide, framework, backend, database);
-          // @ts-ignore
+          // @ts-expect-error - Fallback assignment to parsedResponse with dynamic key access
           parsedResponse[key] = fallback[key] || `Error: Content for ${key} could not be generated or was empty.`;
         }
       }
@@ -461,14 +461,4 @@ ${backend !== 'Not specified' && backend !== 'Frontend Only' && !(isNextJs && ba
 └── ${ide === 'windsurf' ? '.windsurfrules               # Windsurf AI rules file' : (isNextJs ? 'next.config.mjs' : 'vite.config.ts')} # Build tool configuration
 \`\`\`
 `;
-}
-
-// Helper to infer project type for clearer fallback prompts
-function inferProjectType(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes('mobile') || lower.includes('react native')) return 'mobile app';
-  if (lower.includes('desktop') || lower.includes('electron')) return 'desktop app';
-  if (lower.includes('api') || lower.includes('backend')) return 'API/backend service';
-  if (lower.includes('cli') || lower.includes('command')) return 'CLI tool';
-  return 'web application';
 } 

@@ -65,7 +65,7 @@ export function ProjectPlanner() {
     setUserStories([...userStories, newStory]);
   };
 
-  const updateUserStory = (id: string, field: keyof UserStory, value: any) => {
+  const updateUserStory = (id: string, field: keyof UserStory, value: string | string[]) => {
     setUserStories(prev => prev.map(story => 
       story.id === id ? { ...story, [field]: value } : story
     ));
@@ -75,8 +75,8 @@ export function ProjectPlanner() {
     setUserStories(prev => prev.filter(story => story.id !== id));
   };
 
-  const generateProjectPlan = () => {
-    const plan: ProjectPlan = {
+  const generateProjectPlan = async () => {
+    const project: ProjectPlan = {
       id: Date.now().toString(),
       title: projectTitle,
       description: projectDescription,
@@ -90,14 +90,40 @@ export function ProjectPlanner() {
       updatedAt: new Date()
     };
 
-    // This would typically save to state or backend
-    console.log('Generated Project Plan:', plan);
-    alert('Project plan generated! Check the console for details.');
-  };
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          description: project.description,
+          framework: project.techStack.frameworks.join(', '),
+          backend: project.techStack.backend.join(', '),
+          database: project.techStack.database.join(', ')
+        }),
+      });
 
+      if (response.ok) {
+        const data: { rules: string; prompts: string; structure: string } = await response.json();
+        console.log('Generated Project Plan:', data);
+        alert('Project plan generated! Check the console for details.');
+      } else {
+        console.error('Error generating project plan');
+        alert('Error generating project plan');
+      }
+    } catch (error: unknown) {
+      console.error('Error generating project plan:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Error generating project plan: ${errorMessage}`);
+    }
+  };
   const generateFolderStructure = () => {
-    const hasReact = techStack.frameworks.includes('React') || techStack.frameworks.includes('Next.js');
-    const hasNode = techStack.backend.includes('Node.js');
+    const hasPython = Array.isArray(techStack.backend) 
+      ? techStack.backend.some(tech => tech.toLowerCase().includes('python'))
+      : false;
+    const hasReact = techStack.frameworks.some((framework: string) => framework.toLowerCase().includes('react'));
+    
+    // Generate based on selections
+    console.log('Technology choices:', { hasPython, hasReact });
     
     if (hasReact) {
       return `src/
@@ -137,7 +163,7 @@ export function ProjectPlanner() {
             Project Overview
           </CardTitle>
           <CardDescription>
-            Define your project's core details and objectives
+            Define your project&apos;s core details and objectives
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -165,7 +191,7 @@ export function ProjectPlanner() {
               <label className="block text-sm font-medium mb-2">Complexity Level</label>
               <select
                 value={complexity}
-                onChange={(e) => setComplexity(e.target.value as any)}
+                onChange={(e) => setComplexity(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="beginner">Beginner</option>
@@ -344,6 +370,10 @@ export function ProjectPlanner() {
           Generate Project Plan
         </Button>
       </div>
+
+      <p className="text-gray-600 text-sm mb-4">
+        Don&apos;t just code—create with purpose. Your project deserves the perfect foundation.
+      </p>
     </div>
   );
 } 

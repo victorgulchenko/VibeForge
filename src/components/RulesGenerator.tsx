@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { CursorAssistant, CursorRulesInput, SystemPromptInput } from '@/lib/cursor-system-instructions';
@@ -22,7 +21,7 @@ export function RulesGenerator() {
     namingConvention: 'camelCase'
   });
   const [existingRules, setExistingRules] = useState('');
-  const [specificRequirements, setSpecificRequirements] = useState<string[]>([]);
+  const [specificRequirements, ] = useState<string[]>([]);
   const [generatedRules, setGeneratedRules] = useState('');
   const [generatedSystemPrompt, setGeneratedSystemPrompt] = useState('');
   const [activeTab, setActiveTab] = useState<'rules' | 'prompt'>('rules');
@@ -333,7 +332,7 @@ export function RulesGenerator() {
                 </pre>
                 <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    💡 <strong>Usage:</strong> Save this as a `.cursorrules` file in your project's root directory to customize Cursor's AI behavior for this specific project.
+                    💡 <strong>Usage:</strong> Save this as a `.cursorrules` file in your project&apos;s root directory to customize Cursor&apos;s AI behavior for this specific project.
                   </p>
                 </div>
               </div>
@@ -367,7 +366,7 @@ export function RulesGenerator() {
                 </pre>
                 <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    💡 <strong>Usage:</strong> Copy this to Cursor's "Rules for AI" settings (Cmd/Ctrl + Shift + P → "Cursor Settings" → "Rules for AI") to apply workspace-wide AI behavior.
+                    💡 <strong>Usage:</strong> Copy this to Cursor&apos;s &quot;Rules for AI&quot; settings (Cmd/Ctrl + Shift + P → &quot;Cursor Settings&quot; → &quot;Rules for AI&quot;) to apply workspace-wide AI behavior.
                   </p>
                 </div>
               </div>

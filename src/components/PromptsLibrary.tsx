@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { CursorAssistant, ProjectPromptInput, GeneratedPrompt } from '@/lib/cursor-system-instructions';
-import { Copy, Download, FileText, Zap, Clock, Link, ArrowRight } from 'lucide-react';
+import { Copy, Download, FileText, Zap, Clock, Link } from 'lucide-react';
 
 export function PromptsLibrary() {
   const [projectTitle, setProjectTitle] = useState('');
@@ -165,7 +165,7 @@ export function PromptsLibrary() {
               <label className="block text-sm font-medium mb-2">Complexity Level</label>
               <select
                 value={complexity}
-                onChange={(e) => setComplexity(e.target.value as any)}
+                onChange={(e) => setComplexity(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="beginner">Beginner</option>
@@ -242,7 +242,7 @@ export function PromptsLibrary() {
               <label className="block text-sm font-medium mb-2">Explanation Level</label>
               <select
                 value={explanationLevel}
-                onChange={(e) => setExplanationLevel(e.target.value as any)}
+                onChange={(e) => setExplanationLevel(e.target.value as 'minimal' | 'detailed' | 'comprehensive')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="minimal">Minimal - Just the essentials</option>
@@ -369,12 +369,16 @@ export function PromptsLibrary() {
                 <div>
                   <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-1">How to Use These Prompts</h4>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Copy each prompt and paste it into Cursor's chat or composer. Follow them in the numbered order for best results. 
+                    Copy each prompt and paste it into Cursor&apos;s chat or composer. Follow them in the numbered order for best results. 
                     Each prompt is designed to build upon the previous ones, creating a logical development flow.
                   </p>
                 </div>
               </div>
             </div>
+
+            <p className="text-gray-600 text-sm">
+              Don&apos;t forget to save your work! Your generated prompts deserve a home.
+            </p>
           </CardContent>
         </Card>
       )}

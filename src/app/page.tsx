@@ -267,12 +267,15 @@ function MainContent() {
     }
 
     // Simple analytics tracking
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'generate_kit', {
-        event_category: 'engagement',
-        event_label: `${selectedFramework}-${selectedBackend}-${selectedDatabase}`,
-        ide: selectedIde,
-      });
+    if (typeof window !== 'undefined') {
+      const windowWithGtag = window as typeof window & { gtag?: (...args: unknown[]) => void };
+      if (windowWithGtag.gtag) {
+        windowWithGtag.gtag('event', 'generate_kit', {
+          event_category: 'engagement',
+          event_label: `${selectedFramework}-${selectedBackend}-${selectedDatabase}`,
+          ide: selectedIde,
+        });
+      }
     }
 
     setIsGenerating(true);
@@ -314,18 +317,19 @@ function MainContent() {
       setGeneratedOutputs(data);
       
       showToast("Your AI Kit is ready!", 'success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Generation error:", error);
       let errorMessage = "Failed to generate content. Please try again.";
       
-      if (error.message?.includes('fetch')) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg?.includes('fetch')) {
         errorMessage = "Network error. Please check your connection and try again.";
-      } else if (error.message?.includes('429')) {
+      } else if (errorMsg?.includes('429')) {
         errorMessage = "Too many requests. Please wait a moment and try again.";
-      } else if (error.message?.includes('500')) {
+      } else if (errorMsg?.includes('500')) {
         errorMessage = "Server error. Our team has been notified.";
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (errorMsg) {
+        errorMessage = errorMsg;
       }
       
       showToast(errorMessage, 'error');

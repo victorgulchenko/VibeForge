@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatMessage } from '@/types';
 import { Send, Bot, User, Copy, Download } from 'lucide-react';
-import { CURSOR_SYSTEM_INSTRUCTIONS } from '@/lib/cursor-system-instructions';
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -307,4 +306,4 @@ The more context you provide, the better I can tailor my assistance to your need
       </Card>
     </div>
   );
-} 
+}
