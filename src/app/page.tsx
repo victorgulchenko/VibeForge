@@ -514,7 +514,7 @@ function MainContent() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, delay: 0.3 }}
             >
-              Generate AI coding assistant configurations (rules & prompts) for your project.
+              Generate custom cursor/windsurf configurations (rules & prompts) in seconds.
             </motion.p>
           </motion.div>
 
