@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   keywords: ["AI coding", "Cursor IDE", "Windsurf IDE", "development prompts", "AI rules", "vibecoding", "AI assistant"],
   authors: [{ name: "Victor Gulchenko", url: "https://x.com/VictorGulchenko" }],
   creator: "Victor Gulchenko",
+  icons: {
+    icon: "/vibeforge.svg",
+    shortcut: "/vibeforge.svg",
+    apple: "/vibeforge.svg",
+  },
   openGraph: {
     title: "VibeForge | AI-Powered Rules & Prompts for Professional Vibecoding",
     description: "Generate comprehensive AI assistant rules, development prompts, and project structures for Cursor and Windsurf IDEs.",

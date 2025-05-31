@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ToastProvider, useToast } from '@/components/ui/toast';
-import { Copy, ChevronDown, Sparkles, Code, FolderTree, Settings, Github, Heart, Send, ArrowUp, Star, Download, AlertTriangle } from 'lucide-react';
+import { Copy, ChevronDown, Code, FolderTree, Settings, Github, Heart, Send, ArrowUp, Star, Download, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackGenerateKit, trackCopyContent, trackTechStackSelection } from '@/lib/gtag';
+import Image from 'next/image';
 
 interface ExpandableCapsuleProps {
   title: string;
@@ -455,7 +456,7 @@ If the issue persists, check the server logs for more details.`
     <div className="min-h-screen bg-white text-black flex flex-col overflow-hidden">
       <motion.header className="border-b border-black py-2 px-4 flex-shrink-0" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-yellow-500" /><span className="font-mono text-xs font-bold">VibeForge</span><span className="font-mono text-[10px] opacity-70">v1.7</span></div>
+          <div className="flex items-center gap-2"><Image src="/vibeforge.svg" alt="VibeForge Logo" width={16} height={16} className="text-yellow-500" /><span className="font-mono text-xs font-bold">VibeForge</span><span className="font-mono text-[10px] opacity-70">v1.7</span></div>
           <div className="flex items-center gap-3 text-xs font-mono">
             <a href="https://x.com/VictorGulchenko" target="_blank" rel="noopener noreferrer" className="hover:underline transition-all duration-200">@VictorGulchenko</a>
             <a href="https://github.com/VictorGulchenko/vibeforge" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline transition-all duration-200"><Github className="h-3 w-3" /><span>GitHub</span><GitHubStars /></a>
