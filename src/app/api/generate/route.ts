@@ -199,21 +199,26 @@ The "generatedRules" value must be an object where each key is the .mdc filename
   }
 }
 
-function validateAIResponseStructure(parsedResponse: any): AIResponseFormat {
+function validateAIResponseStructure(parsedResponse: unknown): AIResponseFormat {
   const validated: AIResponseFormat = {
     generatedRules: {},
     projectStructure: "## Project Structure\n\n*AI failed to generate project structure. Please verify your input or try generating again.*",
     setupInstructions: "## Setup Instructions\n\n*AI failed to generate setup instructions. Please verify your input or try generating again.*",
   };
 
-  if (parsedResponse.generatedRules && typeof parsedResponse.generatedRules === 'object' && !Array.isArray(parsedResponse.generatedRules)) {
-    Object.entries(parsedResponse.generatedRules).forEach(([key, value]) => {
-        if (typeof key === 'string' && key.endsWith('.mdc') && typeof value === 'string' && value.trim() !== "") {
-            if (value.startsWith('---') && value.includes('description:') && value.includes('globs:')) {
-              validated.generatedRules[key] = value;
-            } else {
-              console.warn(`Rule content for ${key} missing or invalid YAML frontmatter. Content: ${String(value).substring(0,100)}...`);
-              validated.generatedRules[key] = `---
+  // Type guard to check if parsedResponse is an object
+  if (typeof parsedResponse === 'object' && parsedResponse !== null) {
+    const response = parsedResponse as Record<string, unknown>;
+
+    if (response.generatedRules && typeof response.generatedRules === 'object' && !Array.isArray(response.generatedRules)) {
+      const rules = response.generatedRules as Record<string, unknown>;
+      Object.entries(rules).forEach(([key, value]) => {
+          if (typeof key === 'string' && key.endsWith('.mdc') && typeof value === 'string' && value.trim() !== "") {
+              if (value.startsWith('---') && value.includes('description:') && value.includes('globs:')) {
+                validated.generatedRules[key] = value;
+              } else {
+                console.warn(`Rule content for ${key} missing or invalid YAML frontmatter. Content: ${String(value).substring(0,100)}...`);
+                validated.generatedRules[key] = `---
 description: "Error: Invalid content structure for ${key}"
 globs: "**/*"
 ---
@@ -223,13 +228,13 @@ The AI generated malformed content for this rule. It should start with a YAML fr
 Original (partial) content:
 ${String(value).substring(0, 200)}...
 `;
-            }
-        } else {
-            console.warn(`Invalid rule entry: Key "${key}" (not .mdc or not string) or Value (not string or empty) was skipped.`);
-        }
-    });
-    if (Object.keys(validated.generatedRules).length === 0 && Object.keys(parsedResponse.generatedRules).length > 0) {
-        validated.generatedRules['error-generating-rules.mdc'] = `---
+              }
+          } else {
+              console.warn(`Invalid rule entry: Key "${key}" (not .mdc or not string) or Value (not string or empty) was skipped.`);
+          }
+      });
+      if (Object.keys(validated.generatedRules).length === 0 && Object.keys(rules).length > 0) {
+          validated.generatedRules['error-generating-rules.mdc'] = `---
 description: "Error: AI failed to generate any valid rule files."
 globs: "**/*"
 ---
@@ -238,29 +243,30 @@ The AI did not produce any valid .mdc rule files. This could be due to an issue 
 Please review the project description and tech stack, then try generating again.
 Check server logs for more details if the problem persists.
 `;
-    }
+      }
 
-  } else {
-    console.warn("AI response 'generatedRules' is missing, not an object, or is an array.");
-     validated.generatedRules['error-no-rules-object.mdc'] = `---
+    } else {
+      console.warn("AI response 'generatedRules' is missing, not an object, or is an array.");
+       validated.generatedRules['error-no-rules-object.mdc'] = `---
 description: "Error: AI response did not contain a valid 'generatedRules' object."
 globs: "**/*"
 ---
 # Missing Rules Object
 The AI's response structure was incorrect. It should have provided an object for 'generatedRules'.
 `;
-  }
+    }
 
-  if (typeof parsedResponse.projectStructure === 'string' && parsedResponse.projectStructure.trim() !== "") {
-    validated.projectStructure = parsedResponse.projectStructure;
-  } else {
-     console.warn("AI response 'projectStructure' is missing or empty.");
-  }
+    if (typeof response.projectStructure === 'string' && response.projectStructure.trim() !== "") {
+      validated.projectStructure = response.projectStructure;
+    } else {
+       console.warn("AI response 'projectStructure' is missing or empty.");
+    }
 
-  if (typeof parsedResponse.setupInstructions === 'string' && parsedResponse.setupInstructions.trim() !== "") {
-    validated.setupInstructions = parsedResponse.setupInstructions;
-  } else {
-    console.warn("AI response 'setupInstructions' is missing or empty.");
+    if (typeof response.setupInstructions === 'string' && response.setupInstructions.trim() !== "") {
+      validated.setupInstructions = response.setupInstructions;
+    } else {
+      console.warn("AI response 'setupInstructions' is missing or empty.");
+    }
   }
   
   return validated;

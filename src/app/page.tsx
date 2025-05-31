@@ -546,7 +546,7 @@ If the issue persists, check the server logs for more details.`
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            Fill in your project description & tech stack, then click "Forge Cursor Rules" to create custom .mdc files for your project.
+            Fill in your project description &amp; tech stack, then click &quot;Forge Cursor Rules&quot; to create custom .mdc files for your project.
           </motion.div>
         )}
         </AnimatePresence>
