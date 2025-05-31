@@ -1,66 +1,100 @@
+// src/app/api/generate/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-const NEW_SYSTEM_PROMPT = `You are an expert AI assistant, VibeForge, designed to empower developers using AI-driven IDEs like Cursor and Windsurf. Your primary function is to generate comprehensive starter kits for new software projects, enabling users to 'vibe code' effectively and securely from day one.
+// Define the expected structure for the AI's response and the final output
+interface AIResponseFormat {
+  generatedRules: Record<string, string>; // filename.mdc -> content
+  projectStructure: string; // Markdown
+  setupInstructions: string; // Markdown
+}
 
-Your goal is to analyze the user's project idea and their selected technology stack to generate a structured JSON response containing the following keys: "developmentPrompts", "rulesContent", "projectStructure".
+const AI_SYSTEM_PROMPT = `You are CursorRulesForge, an expert AI system specializing in crafting high-quality, tailored .cursorrules (.mdc files) for the Cursor AI editor. Your primary objective is to analyze a user's project description and technology stack to generate a comprehensive set of rules, a suitable project structure, and setup instructions that will significantly enhance their AI-assisted development experience.
 
-Key Principles for Generation:
-- Context is King: Emphasize creating and maintaining context for the AI.
-- AI-First: Encourage delegating 80-90% of coding tasks to the AI.
-- Iterative Refinement: Promote a workflow of generating, reviewing, and refining with AI.
-- Security by Design: Integrate R.A.I.L.G.U.A.R.D. inspired principles.
-- Modularity & Best Practices: Follow modern development standards.
+Core Task:
+Based on the user's project description and technology stack (framework, backend, database), you MUST:
+1.  DECIDE which rule files (.mdc) are most relevant and beneficial for the project.
+2.  GENERATE the complete content for each of these rule files.
+3.  Propose a suitable project directory structure in Markdown.
+4.  Provide clear setup instructions in Markdown.
 
-Detailed Instructions for Each Output Field:
+Principles for Generating High-Quality .mdc Rule Files:
+*   **File Naming:** Use descriptive, kebab-case filenames (e.g., \`react-component-best-practices.mdc\`, \`python-fastapi-routing.mdc\`, \`general-code-quality.mdc\`).
+*   **Modularity & Focus:** Generate MULTIPLE, FOCUSED rule files. Avoid a single monolithic rule file. Aim for 3-10 granular rule files, depending on project complexity and tech stack diversity. Each file should cover a distinct aspect (e.g., language-specific, framework-specific, components, styling, testing, security, performance, API design, database interaction, naming conventions, general best practices).
+*   **YAML Frontmatter:** Each .mdc file MUST start with a YAML frontmatter block containing:
+    *   \`description\`: A concise, impactful summary (under 120 characters) of the rule's purpose and key benefit (e.g., "Enforces TypeScript best practices for type safety and maintainable React components.").
+    *   \`globs\`: A list of appropriate file glob patterns (or a single string glob) to which the rule applies. Choose globs meticulously based on the rule's content (e.g., \`["**/*.tsx", "src/components/**/*.jsx"]\`, \`"**/*.py"\`). For general project-wide rules, use \`"**/*"\` or \`"**/*.*"\`.
+*   **Rule Body (Markdown Content):** The content following the YAML frontmatter MUST be high-value Markdown.
+    *   **Persona Setting (Crucial):** Most rules should begin by establishing an AI persona. This is critical for guiding Cursor's AI. Examples:
+        *   "You are an expert in Next.js 14 App Router, React, Shadcn UI, Radix UI and Tailwind."
+        *   "You are an elite software developer with extensive expertise in Python, command-line tools, and file system operations."
+        *   "You are an AI programming assistant that primarily focuses on producing clear, readable HTML, Tailwind CSS and vanilla JavaScript code."
+    *   **Actionable & Specific Guidelines:** Provide concrete, actionable advice. Use bullet points extensively for clarity. Instead of vague statements, offer specific do's and don'ts.
+        *   BAD: "Use good variable names."
+        *   GOOD: "- Use descriptive variable names with auxiliary verbs (e.g., \`isLoading\`, \`hasPermission\`)."
+        *   BAD: "Test your code."
+        *   GOOD: "- Write unit tests for all business logic using Jest, aiming for >80% coverage."
+                       "- Implement integration tests for API endpoints verifying request/response cycles."
+    *   **Best Practices & Conventions:** Codify established best practices, design patterns (SOLID, DRY), and common conventions for the specific technology.
+    *   **Code Snippets/Examples (Concise):** Include short, illustrative code snippets where they significantly clarify a rule or demonstrate a specific syntax (e.g., a Next.js server action structure, a Python type hint example, a Tailwind CSS responsive utility). Keep them brief and focused.
+    *   **Scope & Relevance:** Ensure the rule content directly aligns with its \`globs\` and \`description\`. A rule for \`"**/*.py"\` shouldn't contain JavaScript advice.
+    *   **Completeness for the Topic:** If a rule is about "Python Error Handling," it should cover common strategies like try-except, custom exceptions, logging, etc., not just one aspect.
 
-1.  "developmentPrompts" (String, Markdown):
-    Generate a sequence of actionable, numbered prompts. These should guide the user through:
-    - Initial planning (e.g., "Create a markdown checklist for feature X").
-    - Project setup and configuration.
-    - Step-by-step feature implementation (breaking down complex tasks).
-    - Writing tests.
-    - Iterative refinement (e.g., "Review the generated code for X and suggest improvements for Y").
-    - Deployment.
-    The prompts should be ready to be pasted into an AI coding assistant.
+Project Structure Proposal:
+*   Format as Markdown.
+*   MUST include a \`.cursor/rules/\` directory populated with the filenames of the rules you generate.
+*   Optionally include a \`docs/ai_context/\` directory for storing files like \`PROJECT_OVERVIEW.md\`, \`ARCHITECTURE.md\`.
+*   Recommend standard directories (\`src/\`, \`tests/\`, etc.) appropriate for the tech stack. Example: for a Next.js project, suggest \`app/\`, \`components/\`, \`lib/\`.
 
-2.  "rulesContent" (String, Markdown):
-    This content will guide the user in setting up AI rules for their IDE.
-    - If Target IDE is Cursor:
-        Describe the modern \`.cursor/rules/\` directory structure.
-        Provide example content for essential modular \`*.mdc\` files using Markdown code blocks:
-        - \`general.mdc\`: Overall project conventions, language versions, AI behavior (e.g., "AI: Explain complex logic").
-        - \`{{tech_stack_primary}}.mdc\` (e.g., \`react.mdc\`, \`python.mdc\`): Rules for the primary framework/language.
-        - \`security.mdc\`: Incorporate R.A.I.L.G.U.A.R.D. principles (e.g., "Security: Sanitize all external inputs", "Security: Use parameterized queries", "AI: Explicitly consider security vulnerabilities when generating code").
-        - \`common_errors.mdc\`: Rules to prevent common bugs or enforce best practices (e.g., "Next.js 15+: Ensure 'await' for cookie/dynamic param functions if Next.js 15+ is used").
-        Format this as a single Markdown string, clearly delineating the content for each suggested file using subheadings and code blocks.
-    - If Target IDE is Windsurf:
-        Generate content for a single \`.windsurfrules\` file (XML or the platform's expected format, typically high-level instructions).
-        This file should be comprehensive: coding standards, architecture, preferred libraries for the stack, security guidelines (R.A.I.L.G.U.A.R.D. inspired), and project-specific conventions.
-        Mention the v1 (streamlined) vs. v5 (comprehensive) philosophy if appropriate.
-    - General for all rules:
-        Rules should be high-level principles and constraints.
-        No API keys or secrets in rules.
-        Rules should be reviewable and encourage periodic pruning.
+Setup Instructions:
+*   Format as Markdown.
+*   Provide clear, step-by-step instructions for the user on how to:
+    1.  Create the \`.cursor/rules/\` directory.
+    2.  Add the generated .mdc files into this directory.
+    3.  Explain how to verify the rules are active in Cursor.
+    4.  Suggest testing and iterating on the rules for optimal results.
 
-3.  "projectStructure" (String, Markdown):
-    Detail a project folder/file structure optimized for AI comprehension and the chosen tech stack.
-    This MUST include a \`docs/ai_context/\` directory with suggestions for:
-    - \`PROJECT_OVERVIEW.md\`: High-level goals, target users, core problem.
-    - \`ARCHITECTURE.md\`: Key architectural decisions, patterns, data flow.
-    - \`CODING_STANDARDS.md\`: Project-specific coding conventions beyond the AI rules.
-    - \`SECURITY_GUIDELINES.md\`: Project-specific security measures.
-    Clearly show typical folders for source code, tests, static assets, etc., based on the tech stack.
+Mandatory Output Format:
+Your entire response MUST be a single, valid JSON object with the following exact structure:
+\`\`\`json
+{
+  "generatedRules": {
+    // Example: "python-best-practices.mdc": "---\ndescription: Core Python best practices for clean, readable code.\nglobs: \"**/*.py\"\n---\n- Follow PEP 8 for code style.\n- Use type hints for all function signatures.\n- Write comprehensive docstrings for public modules, classes, and functions."
+  },
+  "projectStructure": "## Project Structure...",
+  "setupInstructions": "## Setup Instructions..."
+}
+\`\`\`
 
-Be specific, practical, and focus on modern best practices. Ensure the output is a single, valid JSON object with the specified keys.
+Key Considerations for "REAAAAAALLLY good" Rule Generation:
+*   **Contextual Depth:** Deeply analyze the user's project description AND selected tech stack. A "React" app differs from a "Next.js" app. A "Python API" with "FastAPI" needs different rules than a "Python data script."
+*   **Avoid Genericism Where Specificity is Better:** If "TypeScript" and "React" are chosen, a rule like \`typescript-react-props.mdc\` is better than separate, more generic \`typescript.mdc\` and \`react.mdc\` if the advice is specifically about typing React props. However, foundational language rules are still good.
+*   **Practicality:** Rules should be genuinely useful and not just theoretical. They should reflect real-world development challenges and solutions.
+*   **Globs Accuracy:** Incorrect globs make a rule useless. For example, a rule about Next.js server actions should glob \`app/**/actions.ts\` or similar, not just \`**/*.ts\`.
+*   **Default Inclusions (Intelligently):**
+    *   \`clean-code-principles.mdc\` (\`globs: "**/*"\`): DRY, SOLID, YAGNI, meaningful names.
+    *   \`security-best-practices.mdc\` (\`globs: "**/*"\`): Input validation, secrets management, common vulnerabilities.
+    *   \`git-workflow-conventions.mdc\` (\`globs: [".git/**", ".gitignore"]\`): Commit message style, branching strategy.
+    *   Language-specific basics: e.g., \`python-pep8.mdc\`, \`typescript-strict-mode.mdc\`.
+    *   Framework-specific basics: e.g., \`nextjs-app-router.mdc\`, \`fastapi-pydantic-models.mdc\`.
+
+Do NOT use any predefined internal templates for rule content. Generate all content dynamically and thoughtfully based on your understanding and the user's input. The quality of the generated .mdc file content is paramount.
 `;
+
+// The rest of src/app/api/generate/route.ts remains the same as the previous "REAAAAAALLLY good" version you provided.
+// Specifically, the POST function, userPromptToLLM, fetch call, and validateAIResponseStructure are well-suited.
+// The key change is the enhanced AI_SYSTEM_PROMPT.
+
+// (Paste the rest of the previous src/app/api/generate/route.ts here, starting from `export async function POST(request: NextRequest) { ... }`)
+// For brevity, I'm not repeating the entire file, but ensure you use the previous one.
+// The crucial modification is the AI_SYSTEM_PROMPT above.
 
 export async function POST(request: NextRequest) {
   try {
-    const { description, ide, framework, backend, database } = await request.json();
+    const { description, framework, backend, database } = await request.json();
 
-    if (!description || !ide) {
+    if (!description || !framework || !backend || !database) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Project description, framework, backend, and database selections are all required.' },
         { status: 400 }
       );
     }
@@ -68,23 +102,35 @@ export async function POST(request: NextRequest) {
     const openaiApiKey = process.env.OPENAI_API_KEY;
     
     if (!openaiApiKey) {
-      console.log('No OpenAI API key found, using fallback generation');
-      return NextResponse.json(generateFallbackResponse(description, ide, framework, backend, database));
+      console.error('OpenAI API key not found. This is a server-side configuration issue.');
+      return NextResponse.json(
+        { error: 'AI service is currently unavailable due to a configuration error. Please try again later.' },
+        { status: 503 } // Service Unavailable
+      );
     }
 
     const userPromptToLLM = `
 User wants to build: ${description}
 
-Technology Stack:
-- Framework: ${framework || 'Not specified'}
-- Backend: ${backend || 'Not specified'}
-- Database: ${database || 'Not specified'}
-- Target IDE: ${ide} 
+Selected Technology Stack:
+- Frontend Framework: ${framework}
+- Backend Platform: ${backend}
+- Database Solution: ${database}
 
-Based on the system instructions, generate the comprehensive starter kit as a JSON object with the keys: "developmentPrompts", "rulesContent", "projectStructure".
-Ensure the 'rulesContent' is tailored for the specified Target IDE (${ide}). For Cursor, describe the .cursor/rules/ directory structure and provide content for modular files. For Windsurf, provide content for a single .windsurfrules file.
-The project structure must include a 'docs/ai_context/' directory with suggested markdown files.
-    `;
+Based on this project description and tech stack, please:
+1.  Determine an optimal and modular set of .cursorrules files (.mdc) that would best guide an AI code assistant (like Cursor) for this project. Consider aspects like language best practices, framework-specific conventions, UI/component design, API development, data handling, styling, testing, security, performance, and general code quality.
+2.  For each rule file you decide to create:
+    a.  Invent a descriptive, kebab-case filename (e.g., \`react-hooks-best-practices.mdc\`).
+    b.  Generate the complete content for this file. This MUST include:
+        i.  A YAML frontmatter block with a concise \`description\` (under 120 chars) and appropriate \`globs\` (e.g., \`"**/*.tsx"\`, \`["src/api/**/*.py", "src/routers/**/*.py"]\`).
+        ii. A Markdown body containing actionable guidelines, **often starting with a persona setting** (e.g., "You are an expert in building secure Node.js APIs..."), and using bullet points for specific rules or best practices. Include brief code examples if they significantly clarify a rule. Ensure the content is of high quality, reflecting deep understanding of the technology.
+3.  Propose a recommended project directory structure in Markdown format. This structure should include a \`.cursor/rules/\` directory populated with the filenames of the rules you've generated. Also consider including common directories like \`src/\`, \`tests/\`, \`components/\`, \`lib/\`, \`docs/ai_context/\`, etc., tailored to the tech stack.
+4.  Provide clear, step-by-step setup instructions in Markdown format for the user on how to implement these rules in their Cursor IDE.
+
+Adhere strictly to the JSON output format and detailed generation principles outlined in your system prompt (CursorRulesForge).
+Your response MUST be a single, valid JSON object with the keys: "generatedRules", "projectStructure", and "setupInstructions".
+The "generatedRules" value must be an object where each key is the .mdc filename and its value is the full string content of that file.
+`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -93,372 +139,129 @@ The project structure must include a 'docs/ai_context/' directory with suggested
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-4o-mini', // Ensure using gpt-4o-mini or a capable model
         messages: [
           {
             role: 'system',
-            content: NEW_SYSTEM_PROMPT
+            content: AI_SYSTEM_PROMPT
           },
           {
             role: 'user',
             content: userPromptToLLM
           }
         ],
-        temperature: 0.7,
-        max_tokens: 4000, 
+        temperature: 0.4, // Even lower temp for more structured, high-quality rule content
+        max_tokens: 4090, 
         response_format: { type: "json_object" }, 
       }),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`OpenAI API error: ${response.statusText}`, errorBody);
-      throw new Error(`OpenAI API error: ${response.statusText} - ${errorBody}`);
+      console.error(`OpenAI API error: ${response.status} ${response.statusText}`, errorBody);
+      let userFriendlyError = `AI service request failed: ${response.statusText}.`;
+      if (response.status === 401) {
+        userFriendlyError = "Authentication with AI service failed. Please check API key.";
+      } else if (response.status === 429) {
+        userFriendlyError = "AI service rate limit exceeded. Please try again in a few moments.";
+      } else if (response.status >= 500) {
+        userFriendlyError = "AI service is temporarily unavailable. Please try again later.";
+      } else if (errorBody.toLowerCase().includes("quota") || errorBody.toLowerCase().includes("billing")) {
+        userFriendlyError = "AI service quota exceeded or billing issue. Please check your OpenAI account.";
+      }
+      return NextResponse.json({ error: userFriendlyError, details: errorBody }, { status: response.status });
     }
 
     const data = await response.json();
     const aiResponseContent = data.choices[0]?.message?.content;
 
     if (!aiResponseContent) {
-      throw new Error('No response content from OpenAI');
+      console.error('No response content from OpenAI.');
+      return NextResponse.json({ error: 'AI service returned an empty response. Please try again.' }, { status: 500 });
     }
 
     try {
       const parsedResponse = JSON.parse(aiResponseContent);
-      const requiredKeys = ["developmentPrompts", "rulesContent", "projectStructure"];
-      for (const key of requiredKeys) {
-        if (!(key in parsedResponse) || !parsedResponse[key]) { // Also check if value is empty/null
-          console.warn(`OpenAI response missing or empty key: ${key}. Falling back for this key.`);
-          const fallback = generateFallbackResponse(description, ide, framework, backend, database);
-          // @ts-expect-error - Fallback assignment to parsedResponse with dynamic key access
-          parsedResponse[key] = fallback[key] || `Error: Content for ${key} could not be generated or was empty.`;
-        }
-      }
-      return NextResponse.json(parsedResponse);
+      const validatedResponse = validateAIResponseStructure(parsedResponse);
+      return NextResponse.json(validatedResponse);
     } catch (e) {
-      console.error('Failed to parse AI response as JSON or missing keys, returning full fallback:', e, aiResponseContent);
-      return NextResponse.json(generateFallbackResponse(description, ide, framework, backend, database));
+      console.error('Failed to parse AI response as JSON or validation failed:', e, "\nRaw AI Response:\n", aiResponseContent);
+      return NextResponse.json({ error: 'AI response was not in the expected JSON format, or failed validation. Please try again or check server logs.', details: aiResponseContent.substring(0, 500) + "..." }, { status: 500 });
     }
 
   } catch (error) {
-    console.error('Error in POST /api/generate:', error);
-    const { description, ide, framework, backend, database } = await request.json().catch(() => ({
-        description: 'a web application',
-        ide: 'cursor',
-        framework: 'React',
-        backend: 'Node.js',
-        database: 'PostgreSQL'
-    }));
-    return NextResponse.json(generateFallbackResponse(description, ide, framework, backend, database));
+    console.error('Critical error in POST /api/generate:', error);
+    let errorMessage = 'An unexpected critical error occurred during rule generation.';
+    if (error instanceof Error) {
+        errorMessage = `Error: ${error.message}`;
+    }
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
-// --- Fallback Generation Functions ---
-
-function generateFallbackResponse(description: string, ide: string, framework?: string, backend?: string, database?: string) {
-  const tech = {
-    framework: framework || 'React',
-    backend: backend || 'Node.js',
-    database: database || 'PostgreSQL',
-    description: description || 'a web application'
+function validateAIResponseStructure(parsedResponse: any): AIResponseFormat {
+  const validated: AIResponseFormat = {
+    generatedRules: {},
+    projectStructure: "## Project Structure\n\n*AI failed to generate project structure. Please verify your input or try generating again.*",
+    setupInstructions: "## Setup Instructions\n\n*AI failed to generate setup instructions. Please verify your input or try generating again.*",
   };
-  return {
-    developmentPrompts: generateFallbackPrompts(tech.description, ide, tech.framework, tech.backend, tech.database),
-    rulesContent: generateFallbackRules(tech.description, ide, tech.framework, tech.backend, tech.database),
-    projectStructure: generateFallbackStructure(tech.description, tech.framework, tech.backend, tech.database, ide),
-  };
-}
 
+  if (parsedResponse.generatedRules && typeof parsedResponse.generatedRules === 'object' && !Array.isArray(parsedResponse.generatedRules)) {
+    Object.entries(parsedResponse.generatedRules).forEach(([key, value]) => {
+        if (typeof key === 'string' && key.endsWith('.mdc') && typeof value === 'string' && value.trim() !== "") {
+            if (value.startsWith('---') && value.includes('description:') && value.includes('globs:')) {
+              validated.generatedRules[key] = value;
+            } else {
+              console.warn(`Rule content for ${key} missing or invalid YAML frontmatter. Content: ${String(value).substring(0,100)}...`);
+              validated.generatedRules[key] = `---
+description: "Error: Invalid content structure for ${key}"
+globs: "**/*"
+---
+# Invalid Rule Content
+The AI generated malformed content for this rule. It should start with a YAML frontmatter (description, globs).
 
-function generateFallbackPrompts(description: string, ide: string, framework: string, backend: string, database: string): string {
-  return `# Development Prompts for: ${description} (Target IDE: ${ide})
-
-## Phase 1: Planning & Setup
-1.  **Plan Core Features**: "Based on the project description '${description}', create a detailed markdown checklist of core features and sub-tasks. For each, note dependencies and estimated complexity (simple, medium, hard)."
-2.  **Initialize Project**: "Initialize a new ${framework} project with TypeScript. Set up the basic folder structure, install common dependencies like Axios (if needed), and configure ESLint and Prettier for code quality."
-3.  **Setup AI Context Directory**: "Create a \`docs/ai_context/\` directory. Populate \`PROJECT_OVERVIEW.md\` with the project description, target audience, and key goals. Create placeholders for \`ARCHITECTURE.md\`, \`CODING_STANDARDS.md\`, and \`SECURITY_GUIDELINES.md\`."
-4.  **Basic Layout Component**: "Create the main layout component for the ${framework} app (e.g., \`Layout.tsx\`) including a header, footer, and main content area. Ensure it's responsive."
-
-## Phase 2: Core Feature Implementation (Example: User Authentication)
-5.  **Plan Authentication**: "Outline the steps to implement user authentication using ${backend} and ${database} (if applicable, or a service like Firebase/Auth0). Include registration, login, logout, and session management."
-6.  **Implement Backend Auth**: "Generate the ${backend} API endpoints for user registration and login. Include password hashing (e.g., bcrypt) and JWT generation for sessions. Define database schemas/models for users in ${database}." (Skip if frontend-only auth or using Next.js API routes for simple cases)
-7.  **Implement Frontend Auth UI**: "Create the ${framework} components for registration and login forms. Include input validation and state management for form data and errors."
-8.  **Connect Frontend to Backend Auth**: "Implement the frontend logic to call the authentication API endpoints. Handle successful login by storing the JWT and redirecting. Manage loading states and display error messages."
-9.  **Protected Routes**: "Implement protected routes in ${framework} that require authentication to access."
-10. **Write Auth Tests**: "Write unit tests for the authentication logic (both frontend and backend if applicable) and integration tests for the login flow."
-
-## Phase 3: Iterative Development & Refinement
-11. **Implement Next Feature (from checklist in prompt 1)**: "Pick the next uncompleted feature from the checklist. Generate the necessary components, API endpoints, and logic. Remember to break it down if it's complex."
-12. **Review and Refine**: "Review the code generated for [feature name]. Are there areas for improvement in terms of readability, performance, or error handling? Refactor the code to address these points."
-13. **Add State Management**: "If the application state is becoming complex, integrate a state management library (e.g., Zustand, Redux Toolkit for React, Pinia for Vue). Refactor relevant components to use the global store."
-
-## Phase 4: Testing & Quality Assurance
-14. **Expand Test Coverage**: "Increase test coverage for the existing features. Focus on edge cases and critical user flows. Aim for at least 70% coverage."
-15. **Cross-Browser Testing**: "Manually test the application on different browsers (Chrome, Firefox, Safari) and devices (desktop, tablet, mobile) to ensure compatibility and responsiveness."
-
-## Phase 5: Deployment
-16. **Prepare for Deployment**: "Optimize the application for production (e.g., code splitting, lazy loading, image optimization). Create a production build."
-17. **Deploy Application**: "Set up deployment to a platform like Vercel (for frontend/Next.js) or Heroku/AWS (for backend). Configure environment variables for production."
-
-Remember to use your AI assistant iteratively for each step. If the AI's output isn't perfect, provide feedback and ask for revisions.
+Original (partial) content:
+${String(value).substring(0, 200)}...
 `;
-}
-
-function generateFallbackRules(description: string, ide: string, framework: string, backend: string, database: string): string {
-  const commonPreamble = `
-<!-- These rules help guide the AI assistant for the project: ${description} -->
-<!-- Tech Stack: ${framework}, ${backend}, ${database} -->
-<!-- Target IDE: ${ide} -->
-
-<!-- General Principles -->
-<!-- Always prioritize code clarity, maintainability, and correctness. -->
-<!-- Follow modern best practices for the specified technologies. -->
-<!-- Generate code that is secure by default. -->
-<!-- Suggest adding comments for complex logic. -->
-<!-- Encourage writing unit and integration tests for new features. -->
+            }
+        } else {
+            console.warn(`Invalid rule entry: Key "${key}" (not .mdc or not string) or Value (not string or empty) was skipped.`);
+        }
+    });
+    if (Object.keys(validated.generatedRules).length === 0 && Object.keys(parsedResponse.generatedRules).length > 0) {
+        validated.generatedRules['error-generating-rules.mdc'] = `---
+description: "Error: AI failed to generate any valid rule files."
+globs: "**/*"
+---
+# Rule Generation Error
+The AI did not produce any valid .mdc rule files. This could be due to an issue with the prompt or the AI's response.
+Please review the project description and tech stack, then try generating again.
+Check server logs for more details if the problem persists.
 `;
+    }
 
-  if (ide === 'cursor') {
-    return `
-# AI Coding Rules for Cursor IDE
-
-Based on your selection of Cursor IDE, we recommend a modular rules setup using the \`.cursor/rules/\` directory. This approach helps organize rules logically and makes them easier to manage.
-
-Create the following files within the \`.cursor/rules/\` directory in your project root:
-
+  } else {
+    console.warn("AI response 'generatedRules' is missing, not an object, or is an array.");
+     validated.generatedRules['error-no-rules-object.mdc'] = `---
+description: "Error: AI response did not contain a valid 'generatedRules' object."
+globs: "**/*"
 ---
-**File: \`.cursor/rules/general.mdc\`**
-\`\`\`mdc
-// General project conventions and AI behavior
-"Project Goal: ${description}"
-"Primary Language: ${framework.includes('React') || framework.includes('Vue') || framework.includes('Angular') || framework.includes('Svelte') || framework.includes('Next') ? 'TypeScript' : 'JavaScript (or Python/Go if backend is primary)'}"
-"Default to modern ECMAScript features (ES2020+) if JavaScript/TypeScript."
-"AI: Explain complex code snippets or non-obvious logic if not self-explanatory."
-"AI: Suggest improvements for readability, maintainability, and performance."
-"AI: Prefer functional programming patterns where appropriate, but use classes if they offer better clarity for the specific problem."
-"Code Style: Adhere to Prettier formatting (ensure .prettierrc is configured in the project)."
-"Code Style: Use camelCase for variables, functions, and instance members."
-"Code Style: Use PascalCase for classes, types, interfaces, and components."
-"Error Handling: Implement robust error handling for all I/O operations, API calls, and critical logic paths."
-"Logging: Use a structured logging approach for backend services. Avoid logging sensitive information."
-"Testing: Always include suggestions for unit and integration tests for new features."
-"Testing: For React/Next.js, prefer Jest and React Testing Library."
-\`\`\`
----
-**File: \`.cursor/rules/${framework.toLowerCase().replace(/[^a-z0-9]/gi, '')}.mdc\`** (e.g., \`react.mdc\`, \`nextjs.mdc\`)
-\`\`\`mdc
-// Rules specific to ${framework}
-${framework.includes('React') || framework.includes('Next') ?
-`"Framework: Utilize functional components with Hooks."
-"Framework: Ensure all list items have unique and stable \`key\` props."
-"Framework: Props - Use TypeScript interfaces/types for prop definitions."
-"Framework: State - For local state, use \`useState\`. For complex global state, consider Zustand or Jotai before reaching for Redux."
-"Framework: Avoid prop drilling by using Context API or a global state manager where appropriate."
-"Framework: Components should be small and focused on a single responsibility."` :
-framework.includes('Vue') ?
-`"Framework: Use Vue 3 Composition API for new components."
-"Framework: Define props with type checking and validation."
-"Framework: Use Pinia for state management."` :
-`"Framework: Follow idiomatic patterns for ${framework}."`}
-${framework.includes('Next') ?
-`"Next.js: Prefer App Router over Pages Router for new development."
-"Next.js: Utilize Server Components where possible for performance benefits."
-"Next.js: Implement route handlers for API endpoints within the App Router."
-"Next.js: Manage metadata using the Metadata API."` : ""}
-\`\`\`
----
-**File: \`.cursor/rules/security.mdc\`**
-\`\`\`mdc
-// Security Best Practices (R.A.I.L.G.U.A.R.D. Inspired)
-"Security: Sanitize all external inputs (user input, API responses, URL parameters) to prevent XSS and other injection attacks."
-"Security: Use parameterized queries or well-vetted ORMs to prevent SQL injection when interacting with '${database}'."
-"Security: Implement proper authentication and authorization checks for all sensitive operations and data access."
-"Security: Avoid exposing sensitive information (API keys, passwords, PII) in logs, error messages, or frontend code."
-"Security: Use HTTPS for all communication."
-"Security: Keep dependencies up-to-date to patch known vulnerabilities. AI, please highlight if a suggested library has known security issues."
-"AI: When generating code, explicitly consider potential security vulnerabilities (e.g., XSS, CSRF, SQLi, SSRF, IDOR) and implement appropriate mitigations."
-"AI: Do not include secrets or API keys directly in the codebase; guide the user to use environment variables and secure vault solutions."
-"AI: If generating forms, include CSRF protection mechanisms."
-\`\`\`
----
-**File: \`.cursor/rules/common_errors.mdc\`**
-\`\`\`mdc
-// Prevent common errors and enforce best practices
-"Error Handling: Ensure all Promises have .catch() handlers or are handled in try/catch blocks with async/await."
-"Async: Use \`async/await\` for asynchronous operations for better readability."
-"Null Checks: Perform null/undefined checks before accessing properties of potentially nullable objects."
-"Resource Management: Ensure resources like file streams or database connections are properly closed in finally blocks or using try-with-resources patterns if applicable."
-${framework.includes('Next') && (framework.includes('15') || parseFloat(framework.split('Next.js')[1] || '0') >= 15) ? `"Next.js >=15: Remember that cookie(), headers(), and dynamic segment functions (e.g., params in generateMetadata) often require \`await\`."` : ""}
-\`\`\`
----
-**How to use:**
-1. Create a directory named \`.cursor\` in your project's root.
-2. Inside \`.cursor\`, create another directory named \`rules\`.
-3. Place the \`*.mdc\` files (like \`general.mdc\`, \`${framework.toLowerCase().replace(/[^a-z0-9]/gi, '')}.mdc\`, etc.) with the content above into the \`.cursor/rules/\` directory.
-Cursor will automatically pick up these rules to guide its AI assistance for this project. Regularly review and update these rules as your project evolves.
-    `;
-  } else if (ide === 'windsurf') {
-    return `
-<!-- .windsurfrules for ${description} -->
-<!-- Target IDE: Windsurf -->
-<!-- Tech Stack: ${framework}, ${backend}, ${database} -->
-
-<ruleset name="VibeForgeGeneratedWindsurfRules" version="5.0">
-  <description>
-    Comprehensive rules for developing "${description}" using Windsurf,
-    focusing on ${framework}, ${backend}, and ${database}.
-    Inspired by R.A.I.L.G.U.A.R.D. for security.
-  </description>
-
-  <general>
-    <rule priority="high">AI, act as an expert in ${framework}, ${backend}, and ${database}. Your primary goal is to help me vibe code 80-90% of this application.</rule>
-    <rule priority="high">Focus on code clarity, maintainability, performance, and security.</rule>
-    <rule priority="medium">When generating complex logic, provide a brief explanation of your approach.</rule>
-    <rule priority="medium">Use modern ${framework.includes('React') || framework.includes('Vue') || framework.includes('Angular') || framework.includes('Svelte') || framework.includes('Next') ? 'TypeScript (ES2020+)' : 'JavaScript (ES2020+), or latest Python/Go features'} by default.</rule>
-    <rule priority="high">Adhere to DRY (Don't Repeat Yourself) and SOLID principles where applicable.</rule>
-    <rule priority="medium">Suggest and implement comprehensive error handling for all I/O, API calls, and critical paths.</rule>
-    <rule priority="low">Use structured logging for backend services. Avoid logging sensitive data.</rule>
-  </general>
-
-  <coding_standards>
-    <rule priority="high">Follow project's Prettier configuration for formatting. If not present, use 2 spaces for indentation and single quotes for strings (JS/TS).</rule>
-    <rule priority="high">Use camelCase for variables and functions, PascalCase for classes and components/types.</rule>
-    <rule priority="medium">Break down long functions/methods into smaller, manageable units.</rule>
-    <rule priority="high">Ensure all new code includes relevant tests (unit, integration). For React/Next.js, use Jest and React Testing Library.</rule>
-  </coding_standards>
-
-  <technology_specific framework="${framework}" backend="${backend}" database="${database}">
-    ${framework.includes('React') || framework.includes('Next') ?
-    `<frontend>
-      <rule priority="high">Use functional React components with Hooks.</rule>
-      <rule priority="high">Define prop types using TypeScript interfaces.</rule>
-      <rule priority="medium">For state management, prefer Zustand or Jotai for global state over Redux for simplicity unless project scale dictates otherwise.</rule>
-    </frontend>` : ""}
-    ${framework.includes('Next') ?
-    `<nextjs_specific>
-      <rule priority="high">Prefer Next.js App Router.</rule>
-      <rule priority="high">Utilize Server Components where appropriate.</rule>
-      <rule priority="medium">Implement API routes using Route Handlers.</rule>
-    </nextjs_specific>` : ""}
-    <!-- Add more rules for other frameworks/backends like Vue, Angular, Node.js, Python, Go -->
-    <database>
-      <rule priority="high">When interacting with ${database}, use an ORM (like Prisma, TypeORM, SQLAlchemy) or ensure all raw queries are parameterized to prevent SQL injection.</rule>
-      <rule priority="medium">Define clear database schemas and consider migrations for schema changes.</rule>
-    </database>
-  </technology_specific>
-
-  <security section_source="R.A.I.L.G.U.A.R.D. Principles">
-    <rule priority="critical">AI, explicitly consider security implications BEFORE generating code. Think like an attacker and a defender.</rule>
-    <rule priority="critical">Sanitize ALL inputs from any external source (user, network, file system) to prevent injection attacks (XSS, SQLi, Command Injection).</rule>
-    <rule priority="critical">Implement strong authentication and granular authorization. Verify permissions for every sensitive action.</rule>
-    <rule priority="high">Do not hardcode secrets (API keys, passwords). Guide to use environment variables and secure configuration methods.</rule>
-    <rule priority="high">Regularly update dependencies. Highlight if a suggested package has known vulnerabilities.</rule>
-    <rule priority="medium">Implement rate limiting and input validation on API endpoints.</rule>
-    <rule priority="medium">Use secure headers (CSP, HSTS, X-Frame-Options).</rule>
-  </security>
-
-  <vibecoding_workflow>
-    <rule priority="high">When I provide a high-level feature request, break it down into smaller, actionable coding prompts for yourself if needed.</rule>
-    <rule priority="medium">After generating a significant piece of code, ask if I want to review, test, or refine it.</rule>
-    <rule priority="low">Keep context windows in mind. If a conversation becomes too long or loses focus, suggest starting a new focused thread.</rule>
-  </vibecoding_workflow>
-
-</ruleset>
-    `;
+# Missing Rules Object
+The AI's response structure was incorrect. It should have provided an object for 'generatedRules'.
+`;
   }
-  return `Error: IDE ${ide} not recognized for specific rules generation. ${commonPreamble}`;
-}
 
-function generateFallbackStructure(description: string, framework: string, backend: string, database: string, ide: string): string {
-  const isNextJs = framework.toLowerCase().includes('next');
-  const srcDir = 'src/';
-  const frameworkDirName = framework.toLowerCase().replace(/[^a-z0-9]/gi, '');
+  if (typeof parsedResponse.projectStructure === 'string' && parsedResponse.projectStructure.trim() !== "") {
+    validated.projectStructure = parsedResponse.projectStructure;
+  } else {
+     console.warn("AI response 'projectStructure' is missing or empty.");
+  }
+
+  if (typeof parsedResponse.setupInstructions === 'string' && parsedResponse.setupInstructions.trim() !== "") {
+    validated.setupInstructions = parsedResponse.setupInstructions;
+  } else {
+    console.warn("AI response 'setupInstructions' is missing or empty.");
+  }
   
-  return `# Project Structure for: ${description}
-This structure is designed for clarity and AI-assisted development.
-
-\`\`\`
-${description.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')}/
-├── .vscode/                     # VSCode specific settings (applies to Cursor)
-│   └── settings.json
-${ide === 'cursor' ? `├── .cursor/                   # Cursor-specific AI rules and context
-│   └── rules/                 # Modular rule files (*.mdc)
-│       ├── general.mdc
-│       ├── ${frameworkDirName}.mdc
-│       └── security.mdc` : ''}
-├── docs/
-│   └── ai_context/              # Rich context for the AI assistant
-│       ├── PROJECT_OVERVIEW.md  # High-level goals, target users, core problem
-│       ├── ARCHITECTURE.md      # Key architectural decisions, patterns, data flow
-│       ├── CODING_STANDARDS.md  # Project-specific coding conventions
-│       └── SECURITY_GUIDELINES.md # Specific security measures for this project
-├── public/                      # Static assets (images, fonts, etc.)
-│   ├── favicon.ico
-│   └── robots.txt
-├── ${srcDir}                       # Source code
-${isNextJs ?
-`│   ├── app/                   # Next.js App Router
-│   │   ├── (api)/             # API Route Handlers (if using Next.js for backend)
-│   │   │   └── hello/
-│   │   │       └── route.ts
-│   │   ├── (components)/        # UI Components (shared across routes)
-│   │   │   ├── layout/          # Layout components (Navbar, Footer, Sidebar)
-│   │   │   └── ui/              # Generic UI elements (Button, Card, Input)
-│   │   ├── (features)/          # Feature-specific modules/components
-│   │   │   └── example-feature/
-│   │   │       ├── components/
-│   │   │       └── index.ts
-│   │   ├── (lib)/               # Utilities, helpers, constants
-│   │   │   ├── utils.ts
-│   │   │   └── constants.ts
-│   │   ├── (providers)/         # React Context providers
-│   │   ├── (services)/          # API service integrations (if not using Route Handlers for external APIs)
-│   │   ├── (store)/             # Global state management (Zustand, Jotai, Redux)
-│   │   ├── globals.css        # Global styles
-│   │   ├── layout.tsx         # Root layout
-│   │   └── page.tsx           # Root page (homepage)
-` :
-`│   ├── assets/                # Non-public assets (e.g., svgs imported as components)
-│   ├── components/            # Reusable UI components
-│   │   ├── layout/
-│   │   └── ui/
-│   ├── features/              # Feature-specific modules
-│   │   └── example-feature/
-│   │       ├── components/
-│   │       ├── services/
-│   │       └── index.ts
-│   ├── hooks/                 # Custom React hooks (if applicable)
-│   ├── pages/                 # Page components (if not Next.js App Router or similar paradigm)
-│   ├── services/              # API service integrations
-│   ├── store/                 # Global state management
-│   ├── styles/                # CSS modules, global styles
-│   ├── types/                 # TypeScript type definitions
-│   ├── utils/                 # Utility functions
-│   └── main.tsx               # Main application entry point (e.g. React root)
-`}
-${backend !== 'Not specified' && backend !== 'Frontend Only' && !(isNextJs && backend.toLowerCase().includes('next')) ? // Avoid duplicating server if Next.js is the backend
-`├── server/                      # Backend source code (${backend})
-│   ├── config/                # Configuration files (db connection, env loading)
-│   ├── controllers/           # Request handlers (Express, NestJS, etc.)
-│   ├── middlewares/           # Custom middlewares (auth, logging, error handling)
-│   ├── models/                # Database models/schemas for ${database} (e.g., Prisma, Mongoose)
-│   ├── routes/                # API routes definition
-│   ├── services/              # Business logic layer
-│   ├── utils/                 # Backend utilities
-│   └── index.ts               # Backend server entry point (e.g., app.listen())
-` : ""}
-├── tests/                       # Test files (Jest, Vitest, Pytest)
-│   ├── __mocks__/
-│   ├── integration/
-│   └── unit/
-├── .env.example                 # Example environment variables
-├── .eslintrc.json               # ESLint configuration
-├── .gitignore                   # Standard git ignore file (see separate content)
-├── .prettierrc.json             # Prettier configuration
-├── package.json
-├── README.md                    # Project README (see separate template)
-├── tsconfig.json                # TypeScript configuration (if using TypeScript)
-└── ${ide === 'windsurf' ? '.windsurfrules               # Windsurf AI rules file' : (isNextJs ? 'next.config.mjs' : 'vite.config.ts')} # Build tool configuration
-\`\`\`
-`;
-} 
+  return validated;
+}
