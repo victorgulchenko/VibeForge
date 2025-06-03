@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ToastProvider, useToast } from '@/components/ui/toast';
-import { Copy, ChevronDown, Code, FolderTree, Settings, Github, Heart, Send, ArrowUp, Star, Download, AlertTriangle } from 'lucide-react';
+import { Copy, ChevronDown, Code, FolderTree, Settings, Github, Heart, Send, ArrowUp, Star, Download, AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { trackGenerateKit, trackCopyContent, trackTechStackSelection } from '@/lib/gtag';
 import Image from 'next/image';
@@ -24,13 +24,15 @@ function ExpandableCapsule({ title, content, icon, onCopy, defaultExpanded = fal
 
   return (
     <div className="border border-black">
-      <motion.button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-2 flex items-center justify-between bg-white hover:bg-gray-50 transition-all duration-200 text-left cursor-pointer"
+      <motion.div
+        className="w-full px-3 py-2 flex items-center justify-between bg-white hover:bg-gray-50 transition-all duration-200 cursor-pointer"
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
       >
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 flex-1 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           {icon}
           <span className="font-mono text-sm font-medium text-black">{title}</span>
         </div>
@@ -48,13 +50,15 @@ function ExpandableCapsule({ title, content, icon, onCopy, defaultExpanded = fal
             Copy
           </Button>
           <motion.div
+            className="cursor-pointer"
+            onClick={() => setIsExpanded(!isExpanded)}
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
             <ChevronDown className="h-4 w-4 text-black" />
           </motion.div>
         </div>
-      </motion.button>
+      </motion.div>
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -96,13 +100,15 @@ function RuleFile({ filename, content, onCopy }: RuleFileProps) {
 
   return (
     <div className="border border-gray-300 bg-white">
-      <motion.button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-2 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-all duration-200 text-left cursor-pointer"
+      <motion.div
+        className="w-full px-3 py-2 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition-all duration-200 cursor-pointer"
         whileHover={{ scale: 1.001 }}
         whileTap={{ scale: 0.999 }}
       >
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 flex-1 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           <Code className="h-4 w-4 text-blue-600" />
           <span className="font-mono text-sm font-medium text-gray-700">{filename}</span>
         </div>
@@ -120,13 +126,15 @@ function RuleFile({ filename, content, onCopy }: RuleFileProps) {
             Copy
           </Button>
           <motion.div
+            className="cursor-pointer"
+            onClick={() => setIsExpanded(!isExpanded)}
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
             <ChevronDown className="h-4 w-4 text-gray-500" />
           </motion.div>
         </div>
-      </motion.button>
+      </motion.div>
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -298,6 +306,82 @@ function GitHubStars() {
   return <div className="flex items-center gap-1"><Star className="h-3 w-3 text-yellow-500" /><span>{stars ?? 'N/A'}</span></div>;
 }
 
+function StarRepoPopup({ shouldShow, onDismiss }: { shouldShow: boolean; onDismiss: () => void }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (shouldShow) {
+      timer = setTimeout(() => setIsVisible(true), 1500);
+    } else {
+      setIsVisible(false);
+    }
+    return () => clearTimeout(timer);
+  }, [shouldShow]);
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    onDismiss();
+  };
+
+  const handleStarClick = () => {
+    window.open('https://github.com/VictorGulchenko/vibeforge', '_blank');
+    handleDismiss();
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: -10 }}
+        transition={{ duration: 0.3, ease: "backOut" }}
+        className="fixed top-16 right-4 z-[60] bg-white border-2 border-black p-4 shadow-lg max-w-64"
+      >
+        {/* Arrow pointing up to GitHub link */}
+        <div className="absolute -top-2 right-12 w-4 h-4 bg-white border-l-2 border-t-2 border-black transform rotate-45"></div>
+        <div className="relative">
+          <button
+            onClick={handleDismiss}
+            className="absolute -top-2 -right-2 w-5 h-5 bg-black text-white flex items-center justify-center hover:bg-gray-800 transition-colors"
+          >
+            <X className="h-3 w-3" />
+          </button>
+          <div className="text-center space-y-2">
+            <div className="flex items-center justify-center gap-1 mb-2">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <span className="font-mono text-xs font-bold">Hey there!</span>
+            </div>
+            <p className="text-xs font-mono text-gray-700 leading-relaxed">
+              If VibeForge helped you generate some awesome Cursor rules, how about giving us a star? ⭐
+            </p>
+            <div className="flex gap-2 mt-3">
+              <Button
+                onClick={handleStarClick}
+                size="sm"
+                className="flex-1 bg-black text-white hover:bg-gray-800 border border-black font-mono text-xs h-7 cursor-pointer"
+              >
+                <Star className="h-3 w-3 mr-1" />
+                Star it!
+              </Button>
+              <Button
+                onClick={handleDismiss}
+                variant="outline"
+                size="sm"
+                className="px-2 border-black text-black hover:bg-gray-50 font-mono text-xs h-7 cursor-pointer"
+              >
+                Later
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function MainContent() {
   const [description, setDescription] = useState('');
   const [selectedFramework, setSelectedFramework] = useState<string>('');
@@ -307,6 +391,7 @@ function MainContent() {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [isHoveringTitle, setIsHoveringTitle] = useState(false);
   const [generatedOutputs, setGeneratedOutputs] = useState<GeneratedOutputs | null>(null);
+  const [showStarPopup, setShowStarPopup] = useState(false);
 
   const { showToast } = useToast();
 
@@ -371,6 +456,9 @@ If the issue persists, check the server logs for more details.`
       } else {
         setGeneratedOutputs(responseBody);
         showToast("✅ Your Cursor Rules are forged!", 'success');
+        // Show star popup after successful generation
+        console.log('Generation successful, setting showStarPopup to true');
+        setShowStarPopup(true);
       }
 
     } catch (error: unknown) {
@@ -452,9 +540,12 @@ If the issue persists, check the server logs for more details.`
     );
   };
 
+  console.log('MainContent render: showStarPopup =', showStarPopup);
+
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col overflow-hidden">
-      <motion.header className="border-b border-black py-2 px-4 flex-shrink-0" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+    <div className="min-h-screen bg-white text-black flex flex-col">
+      <StarRepoPopup shouldShow={showStarPopup} onDismiss={() => setShowStarPopup(false)} />
+      <motion.header className="sticky top-0 z-40 border-b border-black py-2 px-4 flex-shrink-0 bg-white" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2"><Image src="/vibeforge.svg" alt="VibeForge Logo" width={16} height={16} className="text-yellow-500" /><span className="font-mono text-xs font-bold">VibeForge</span><span className="font-mono text-[10px] opacity-70">v1.7</span></div>
           <div className="flex items-center gap-3 text-xs font-mono">

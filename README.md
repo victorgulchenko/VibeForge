@@ -21,7 +21,7 @@ Try VibeForge Live here: vibeforge.app
 ## Installation
 
 ```bash
-git clone https://github.com/yourrepo/vibeforge
+git clone https://github.com/victorgulchenko/vibeforge
 cd vibeforge
 npm install
 npm run dev
