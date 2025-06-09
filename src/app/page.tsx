@@ -482,28 +482,54 @@ If the issue persists, check the server logs for more details.`
   };
 
   const downloadAllRules = () => {
-    if (!generatedOutputs?.generatedRules || Object.keys(generatedOutputs.generatedRules).length === 0) {
-      showToast("🤷 No rules to download.", 'error');
+    if (!generatedOutputs) {
+      showToast("🤷 No content to download.", 'error');
       return;
     }
     
-    Object.entries(generatedOutputs.generatedRules).forEach(([filename, content]) => {
-      if (typeof content !== 'string') {
-        console.warn(`Skipping download for ${filename} due to invalid content type.`);
-        return;
-      }
-      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' }); // Use markdown type
+    let downloadCount = 0;
+    
+    // Download .mdc rule files
+    if (generatedOutputs.generatedRules && Object.keys(generatedOutputs.generatedRules).length > 0) {
+      Object.entries(generatedOutputs.generatedRules).forEach(([filename, content]) => {
+        if (typeof content !== 'string') {
+          console.warn(`Skipping download for ${filename} due to invalid content type.`);
+          return;
+        }
+        const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename; // filename should already include .mdc
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        downloadCount++;
+      });
+    }
+    
+
+    
+    // Download project structure
+    if (generatedOutputs.projectStructure) {
+      const blob = new Blob([generatedOutputs.projectStructure], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename; // filename should already include .mdc
+      a.download = 'project-structure.md';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    });
+      downloadCount++;
+    }
     
-    showToast("💾 All rule files downloaded!", 'success');
+    if (downloadCount > 0) {
+      showToast(`💾 ${downloadCount} files downloaded!`, 'success');
+    } else {
+      showToast("🤷 No files to download.", 'error');
+    }
   };
 
   const TechGroup = ({ title, options, selected, onSelect }: { title: string; options: string[]; selected: string; onSelect: (value: string) => void; }) => {
@@ -601,11 +627,11 @@ If the issue persists, check the server logs for more details.`
             <div className="space-y-2">
               <ExpandableCapsule title="Setup Instructions" content={generatedOutputs.setupInstructions} icon={<Settings className="h-3 w-3" />} onCopy={() => copyToClipboard(generatedOutputs.setupInstructions, "Setup Instructions")} defaultExpanded={true} />
               
-              {Object.keys(generatedOutputs.generatedRules).length > 0 && (
+              {generatedOutputs && (
                 <motion.div className="flex justify-center my-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
                   <Button onClick={downloadAllRules} variant="outline" className="border-black bg-white text-black hover:bg-black hover:text-white transition-all duration-200 font-mono text-sm cursor-pointer">
                     <Download className="h-4 w-4 mr-2" />
-                    Download All Rules ({Object.keys(generatedOutputs.generatedRules).length} files)
+                    Download All Files ({(Object.keys(generatedOutputs.generatedRules || {}).length + (generatedOutputs.projectStructure ? 1 : 0))} files)
                   </Button>
                 </motion.div>
               )}
@@ -646,8 +672,7 @@ If the issue persists, check the server logs for more details.`
 
       <motion.footer className="border-t border-black py-2 px-4 text-center flex-shrink-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.5 }}>
         <div className="flex items-center justify-center gap-2 text-xs font-mono">
-          <span>Built with</span><Heart className="h-3 w-3 fill-red-500 text-red-500" /> <span>for the Cursor AI community</span><span>•</span>
-          <a href="https://github.com/PatrickJS/awesome-cursorrules" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline"><Github className="h-3 w-3" />awesome-cursorrules</a>
+          <span>Built with</span><Heart className="h-3 w-3 fill-red-500 text-red-500" /> <span>for the Cursor AI community</span>
         </div>
       </motion.footer>
     </div>
